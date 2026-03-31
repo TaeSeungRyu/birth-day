@@ -92,31 +92,17 @@
     </div>
 
     <script>
+      function decodeBase64(base64) {
+        const bytes = Uint8Array.from(atob(base64), (c) => c.charCodeAt(0));
+        return new TextDecoder().decode(bytes);
+      }
+
       $(document).ready(function () {
-        let currentData = [
-          { region: "서울1", name: "전수복", lunar: "03.02", solar: "" },
-          { region: "서울1", name: "문영희", lunar: "01.27", solar: "" },
-          { region: "서울2", name: "전훈", lunar: "", solar: "10.17" },
-          { region: "서울2", name: "이근선", lunar: "", solar: "01.03" },
-          { region: "서울2", name: "전예빈", lunar: "", solar: "10.26" },
-          { region: "서울2", name: "전재홍", lunar: "", solar: "10.03" },
-          { region: "서울2", name: "전이담", lunar: "", solar: "11.04" },
-          { region: "예산", name: "류경모", lunar: "06.22", solar: "" },
-          { region: "예산", name: "전선미", lunar: "02.12", solar: "" },
-          { region: "인천", name: "류태승", lunar: "", solar: "06.06" },
-          { region: "인천", name: "김수진", lunar: "", solar: "07.18" },
-          { region: "인천", name: "류연수", lunar: "", solar: "07.23" },
-          { region: "인천", name: "류연아", lunar: "", solar: "10.28" },
-          { region: "화성1", name: "류문선", lunar: "", solar: "01.04" },
-          { region: "화성1", name: "정지선", lunar: "", solar: "01.18" },
-          { region: "화성1", name: "류서현", lunar: "", solar: "09.21" },
-          { region: "목포", name: "전수용", lunar: "12.21", solar: "" },
-          { region: "목포", name: "김미애", lunar: "05.01", solar: "" },
-          { region: "화성2", name: "전현주", lunar: "", solar: "02.22" },
-          { region: "화성2", name: "김진수", lunar: "", solar: "04.01" },
-          { region: "화성2", name: "김도윤", lunar: "", solar: "06.29" },
-          { region: "화성2", name: "김이솔", lunar: "", solar: "03.03" },
-        ];
+        let currentData =
+          "W3sicmVnaW9uIjoi7ISc7Jq4MSIsIm5hbWUiOiLsoITsiJjrs7UiLCJsdW5hciI6IjAzLjAyIiwic29sYXIiOiIifSx7InJlZ2lvbiI6IuyEnOyauDEiLCJuYW1lIjoi66y47JiB7Z2sIiwibHVuYXIiOiIwMS4yNyIsInNvbGFyIjoiIn0seyJyZWdpb24iOiLshJzsmrgyIiwibmFtZSI6IuyghO2biCIsImx1bmFyIjoiIiwic29sYXIiOiIxMC4xNyJ9LHsicmVnaW9uIjoi7ISc7Jq4MiIsIm5hbWUiOiLsnbTqt7zshKAiLCJsdW5hciI6IiIsInNvbGFyIjoiMDEuMDMifSx7InJlZ2lvbiI6IuyEnOyauDIiLCJuYW1lIjoi7KCE7JiI67mIIiwibHVuYXIiOiIiLCJzb2xhciI6IjEwLjI2In0seyJyZWdpb24iOiLshJzsmrgyIiwibmFtZSI6IuyghOyerO2ZjSIsImx1bmFyIjoiIiwic29sYXIiOiIxMC4wMyJ9LHsicmVnaW9uIjoi7ISc7Jq4MiIsIm5hbWUiOiLsoITsnbTri7QiLCJsdW5hciI6IiIsInNvbGFyIjoiMTEuMDQifSx7InJlZ2lvbiI6IuyYiOyCsCIsIm5hbWUiOiLrpZjqsr3rqqgiLCJsdW5hciI6IjA2LjIyIiwic29sYXIiOiIifSx7InJlZ2lvbiI6IuyYiOyCsCIsIm5hbWUiOiLsoITshKDrr7giLCJsdW5hciI6IjAyLjEyIiwic29sYXIiOiIifSx7InJlZ2lvbiI6IuyduOyynCIsIm5hbWUiOiLrpZjtg5zsirkiLCJsdW5hciI6IiIsInNvbGFyIjoiMDYuMDYifSx7InJlZ2lvbiI6IuyduOyynCIsIm5hbWUiOiLquYDsiJjsp4QiLCJsdW5hciI6IiIsInNvbGFyIjoiMDcuMTgifSx7InJlZ2lvbiI6IuyduOyynCIsIm5hbWUiOiLrpZjsl7DsiJgiLCJsdW5hciI6IiIsInNvbGFyIjoiMDcuMjMifSx7InJlZ2lvbiI6IuyduOyynCIsIm5hbWUiOiLrpZjsl7DslYQiLCJsdW5hciI6IiIsInNvbGFyIjoiMTAuMjgifSx7InJlZ2lvbiI6Iu2ZlOyEsTEiLCJuYW1lIjoi66WY66y47ISgIiwibHVuYXIiOiIiLCJzb2xhciI6IjAxLjA0In0seyJyZWdpb24iOiLtmZTshLExIiwibmFtZSI6IuygleyngOyEoCIsImx1bmFyIjoiIiwic29sYXIiOiIwMS4xOCJ9LHsicmVnaW9uIjoi7ZmU7ISxMSIsIm5hbWUiOiLrpZjshJztmIQiLCJsdW5hciI6IiIsInNvbGFyIjoiMDkuMjEifSx7InJlZ2lvbiI6Iuuqqe2PrCIsIm5hbWUiOiLsoITsiJjsmqkiLCJsdW5hciI6IjEyLjIxIiwic29sYXIiOiIifSx7InJlZ2lvbiI6Iuuqqe2PrCIsIm5hbWUiOiLquYDrr7jslaAiLCJsdW5hciI6IjA1LjAxIiwic29sYXIiOiIifSx7InJlZ2lvbiI6Iu2ZlOyEsTIiLCJuYW1lIjoi7KCE7ZiE7KO8IiwibHVuYXIiOiIiLCJzb2xhciI6IjAyLjIyIn0seyJyZWdpb24iOiLtmZTshLEyIiwibmFtZSI6Iuq5gOynhOyImCIsImx1bmFyIjoiIiwic29sYXIiOiIwNC4wMSJ9LHsicmVnaW9uIjoi7ZmU7ISxMiIsIm5hbWUiOiLquYDrj4TsnKQiLCJsdW5hciI6IiIsInNvbGFyIjoiMDYuMjkifSx7InJlZ2lvbiI6Iu2ZlOyEsTIiLCJuYW1lIjoi6rmA7J207IaUIiwibHVuYXIiOiIiLCJzb2xhciI6IjAzLjAzIn1d";
+
+        currentData = JSON.parse(decodeBase64(currentData));
+
         let sortDirection = { lunar: 1, solar: 1 };
 
         /**
