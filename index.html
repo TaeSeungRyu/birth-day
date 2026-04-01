@@ -6,12 +6,12 @@
     <title>용당 프리미엄 멤버</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js"></script>
     <link
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
     />
     <style>
-      /* 모바일 줄바꿈 방지 및 테이블 최적화 */
       .nowrap {
         white-space: nowrap;
       }
@@ -19,22 +19,99 @@
         border-collapse: separate;
         border-spacing: 0;
       }
-
-      /* 헤더 정렬 버튼 효과 */
       .sort-header {
         cursor: pointer;
         transition: background-color 0.2s;
       }
       .sort-header:hover {
         background-color: #2563eb;
-      } /* 조금 더 짙은 파랑 */
-
-      /* 지역 셀 전용 스타일 */
+      }
       .region-cell {
         background-color: #f0f9ff;
         font-weight: 700;
         color: #0369a1;
         border-right: 1px solid #e0f2fe;
+      }
+
+      /* 달력 커스텀 스타일 */
+      #calendar {
+        background: white;
+        padding: 20px;
+        border-radius: 12px;
+        margin-bottom: 30px;
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        border: 1px solid #e2e8f0;
+      }
+      .fc-event {
+        cursor: pointer;
+        border: none !important;
+        padding: 2px 4px;
+      }
+      .fc-toolbar-title {
+        font-size: 1.25rem !important;
+        font-weight: 800;
+        color: #1e3a8a;
+      }
+      .fc-button-primary {
+        background-color: #3b82f6 !important;
+        border: none !important;
+      }
+      .fc-toolbar-chunk {
+        display: flex;
+        flex-direction: row;
+        width: 100%;
+        align-items: center;
+        justify-content: space-between;
+      }
+      .fc-toolbar-title {
+        width: max-content;
+      }
+      /* 모바일용 추가 스타일 */
+      /* 모바일용 추가 스타일 */
+      @media (max-width: 768px) {
+        /* 1. 달력 전체 폰트 사이즈 축소 */
+        .fc {
+          font-size: 10px !important; /* 전체 기본 폰트 크기 줄임 */
+        }
+        .fc-toolbar-title {
+          font-size: 1rem !important; /* '2024년 10월' 텍스트 크기 */
+        }
+        /* 2. 날짜 숫자 크기 조절 */
+        .fc .fc-daygrid-day-top {
+          font-size: 10px !important;
+        }
+
+        /* 3. 이벤트(이름) 텍스트 크기 및 간격 조절 */
+        .fc-event-title {
+          font-size: 9px !important;
+          font-weight: 500 !important;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis; /* 글자가 길면 ... 표시 */
+        }
+
+        /* 4. 이벤트 상자 높이 줄이기 */
+        .fc-v-event .fc-event-main,
+        .fc-daygrid-event {
+          padding: 1px 2px !important;
+          margin: 1px 0 !important;
+        }
+
+        /* 5. 헤더 툴바(연/월 표시 및 버튼) 조정 */
+        .fc .fc-toolbar {
+          flex-direction: row !important;
+          justify-content: space-between;
+          margin-bottom: 1em !important;
+        }
+        .fc .fc-button {
+          padding: 0.3em 0.5em !important;
+          font-size: 0.75rem !important;
+        }
+
+        /* 6. 달력 셀 높이 최소화 */
+        .fc .fc-daygrid-day-frame {
+          min-height: 50px !important;
+        }
       }
     </style>
   </head>
@@ -47,11 +124,17 @@
           <i class="fa-solid fa-crown text-amber-400"></i>
           용당 프리미엄 멤버
         </h1>
-        <p class="text-blue-600/70 mt-2 font-medium">Premium Membership List</p>
+        <p class="text-blue-600/70 mt-2 font-medium">
+          Premium Membership Calendar & List
+        </p>
+      </div>
+
+      <div id="calendar-container">
+        <div id="calendar"></div>
       </div>
 
       <div
-        class="bg-white shadow-2xl shadow-blue-200/60 border border-blue-100 overflow-hidden"
+        class="bg-white shadow-2xl shadow-blue-200/60 border border-blue-100 overflow-hidden rounded-xl"
       >
         <div class="overflow-x-auto">
           <table id="user-table" class="w-full text-center">
@@ -59,16 +142,16 @@
               <tr
                 class="bg-blue-500 text-white text-sm uppercase tracking-widest"
               >
-                <th class="px-3 py-2 font-bold nowrap">지역</th>
-                <th class="px-3 py-2 font-bold nowrap">이름</th>
+                <th class="px-3 py-3 font-bold nowrap">지역</th>
+                <th class="px-3 py-3 font-bold nowrap">이름</th>
                 <th
-                  class="px-3 py-2 font-bold sort-header nowrap"
+                  class="px-3 py-3 font-bold sort-header nowrap"
                   data-sort="lunar"
                 >
                   음력 <i class="fa-solid fa-sort ml-1 opacity-60"></i>
                 </th>
                 <th
-                  class="px-3 py-2font-bold sort-header nowrap"
+                  class="px-3 py-3 font-bold sort-header nowrap"
                   data-sort="solar"
                 >
                   양력 <i class="fa-solid fa-sort ml-1 opacity-60"></i>
@@ -77,7 +160,7 @@
             </thead>
             <tbody
               id="user-table-body"
-              class="text-slate-600 divide-y divide-blue-300"
+              class="text-slate-600 divide-y divide-blue-100"
             >
               <tr>
                 <td colspan="4" class="py-20 text-blue-300 font-medium">
@@ -98,32 +181,62 @@
       }
 
       $(document).ready(function () {
-        let currentData =
-          "W3sicmVnaW9uIjoi7ISc7Jq4MSIsIm5hbWUiOiLsoITsiJjrs7UiLCJsdW5hciI6IjAzLjAyIiwic29sYXIiOiIifSx7InJlZ2lvbiI6IuyEnOyauDEiLCJuYW1lIjoi66y47JiB7Z2sIiwibHVuYXIiOiIwMS4yNyIsInNvbGFyIjoiIn0seyJyZWdpb24iOiLshJzsmrgyIiwibmFtZSI6IuyghO2biCIsImx1bmFyIjoiIiwic29sYXIiOiIxMC4xNyJ9LHsicmVnaW9uIjoi7ISc7Jq4MiIsIm5hbWUiOiLsnbTqt7zshKAiLCJsdW5hciI6IiIsInNvbGFyIjoiMDEuMDMifSx7InJlZ2lvbiI6IuyEnOyauDIiLCJuYW1lIjoi7KCE7JiI67mIIiwibHVuYXIiOiIiLCJzb2xhciI6IjEwLjI2In0seyJyZWdpb24iOiLshJzsmrgyIiwibmFtZSI6IuyghOyerO2ZjSIsImx1bmFyIjoiIiwic29sYXIiOiIxMC4wMyJ9LHsicmVnaW9uIjoi7ISc7Jq4MiIsIm5hbWUiOiLsoITsnbTri7QiLCJsdW5hciI6IiIsInNvbGFyIjoiMTEuMDQifSx7InJlZ2lvbiI6IuyYiOyCsCIsIm5hbWUiOiLrpZjqsr3rqqgiLCJsdW5hciI6IjA2LjIyIiwic29sYXIiOiIifSx7InJlZ2lvbiI6IuyYiOyCsCIsIm5hbWUiOiLsoITshKDrr7giLCJsdW5hciI6IjAyLjEyIiwic29sYXIiOiIifSx7InJlZ2lvbiI6IuyduOyynCIsIm5hbWUiOiLrpZjtg5zsirkiLCJsdW5hciI6IiIsInNvbGFyIjoiMDYuMDYifSx7InJlZ2lvbiI6IuyduOyynCIsIm5hbWUiOiLquYDsiJjsp4QiLCJsdW5hciI6IiIsInNvbGFyIjoiMDcuMTgifSx7InJlZ2lvbiI6IuyduOyynCIsIm5hbWUiOiLrpZjsl7DsiJgiLCJsdW5hciI6IiIsInNvbGFyIjoiMDcuMjMifSx7InJlZ2lvbiI6IuyduOyynCIsIm5hbWUiOiLrpZjsl7DslYQiLCJsdW5hciI6IiIsInNvbGFyIjoiMTAuMjgifSx7InJlZ2lvbiI6Iu2ZlOyEsTEiLCJuYW1lIjoi66WY66y47ISgIiwibHVuYXIiOiIiLCJzb2xhciI6IjAxLjA0In0seyJyZWdpb24iOiLtmZTshLExIiwibmFtZSI6IuygleyngOyEoCIsImx1bmFyIjoiIiwic29sYXIiOiIwMS4xOCJ9LHsicmVnaW9uIjoi7ZmU7ISxMSIsIm5hbWUiOiLrpZjshJztmIQiLCJsdW5hciI6IiIsInNvbGFyIjoiMDkuMjEifSx7InJlZ2lvbiI6Iuuqqe2PrCIsIm5hbWUiOiLsoITsiJjsmqkiLCJsdW5hciI6IjEyLjIxIiwic29sYXIiOiIifSx7InJlZ2lvbiI6Iuuqqe2PrCIsIm5hbWUiOiLquYDrr7jsmIgiLCJsdW5hciI6IjA1LjAxIiwic29sYXIiOiIifSx7InJlZ2lvbiI6Iu2ZlOyEsTIiLCJuYW1lIjoi7KCE7ZiE7KO8IiwibHVuYXIiOiIiLCJzb2xhciI6IjAyLjIyIn0seyJyZWdpb24iOiLtmZTshLEyIiwibmFtZSI6Iuq5gOynhOyImCIsImx1bmFyIjoiIiwic29sYXIiOiIwNC4wMSJ9LHsicmVnaW9uIjoi7ZmU7ISxMiIsIm5hbWUiOiLquYDrj4TsnKQiLCJsdW5hciI6IiIsInNvbGFyIjoiMDYuMjkifSx7InJlZ2lvbiI6Iu2ZlOyEsTIiLCJuYW1lIjoi6rmA7J207IaUIiwibHVuYXIiOiIiLCJzb2xhciI6IjAzLjAzIn1d";
-
-        currentData = JSON.parse(decodeBase64(currentData));
-
+        // 원본 데이터
+        let rawData =
+          "W3sicmVnaW9uIjoi7ISc7Jq4MSIsIm5hbWUiOiLsoITsiJjrs7UiLCJsdW5hciI6IjAzLjAyIiwic29sYXIiOiIifSx7InJlZ2lvbiI6IuyEnOyauDEiLCJuYW1lIjoi66y47JiB7Z2sIiwibHVuYXIiOiIwMS4yNyIsInNvbGFyIjoiIn0seyJyZWdpb24iOiLshJzsmrgyIiwibmFtZSI6IuyghO2biCIsImx1bmFyIjoiIiwic29sYXIiOiIxMC4xNyJ9LHsicmVnaW9uIjoi7ISc7Jq4MiIsIm5hbWUiOiLsnbTqt7zshKAiLCJsdW5hciI6IiIsInNvbGFyIjoiMDEuMDMifSx7InJlZ2lvbiI6IuyEnOyauDIiLCJuYW1lIjoi7KCE7JiI67mIIiwibHVuYXIiOiIiLCJzb2xhciI6IjEwLjI2In0seyJyZWdpb24iOiLshJzsmrgyIiwibmFtZSI6IuyghOyerO2ZjSIsImx1bmFyIjoiIiwic29sYXIiOiIxMC4wMyJ9LHsicmVnaW9uIjoi7ISc7Jq4MiIsIm5hbWUiOiLsoITsnbTri7QiLCJsdW5hciI6IiIsInNvbGFyIjoiMTEuMDQifSx7InJlZ2lvbiI6IuyYiOyCsCIsIm5hbWUiOiLrpZjqsr3rqqgiLCJsdW5hciI6IjA2LjIyIiwic29sYXIiOiIifSx7InJlZ2lvbiI6IuyYiOyCsCIsIm5hbWUiOiLsoITshKDrr7giLCJsdW5hciI6IjAyLjEyIiwic29sYXIiOiIifSx7InJlZ2lvbiI6IuyduOyynCIsIm5hbWUiOiLrpZjtg5zsirkiLCJsdW5hciI6IiIsInNvbGFyIjoiMDYuMDYifSx7InJlZ2lvbiI6IuyduOyynCIsIm5hbWUiOiLquYDsiJjsp4QiLCJsdW5hciI6IiIsInNvbGFyIjoiMDcuMTgifSx7InJlZ2lvbiI6IuyduOyynCIsIm5hbWUiOiLrpZjsl7DsiJgiLCJsdW5hciI6IiIsInNvbGFyIjoiMDcuMjMifSx7InJlZ2lvbiI6IuyduOyynCIsIm5hbWUiOiLrpZjsl7DslYQiLCJsdW5hciI6IiIsInNvbGFyIjoiMTAuMjgifSx7InJlZ2lvbiI6Iu2ZlOyEsTEiLCJuYW1lIjoi66WY66y47ISgIiwibHVuYXIiOiIiLCJzb2xhciI6IjAxLjA0In0seyJyZWdpb24iOiLtmZTshLExIiwibmFtZSI6IuygleyngOyEoCIsImx1bmFyIjoiIiwic29sYXIiOiIwMS4xOCJ9LHsicmVnaW9uIjoi7ZmU7ISxMSIsIm5hbWUiOiLrpZjshJztmIQiLCJsdW5hciI6IiIsInNvbGFyIjoiMDkuMjEifSx7InJlZ2lvbiI6Iuuqqe2PrCIsIm5hbWUiOiLsoITsiJjsmqkiLCJsdW5hciI6IjEyLjIxIiwic29sYXIiOiIifSx7InJlZ2lvbiI6Iuuqqe2PrCIsIm5hbWUiOiLquYDrr7jsmIgiLCJsdW5hciI6IjA1LjAxIiwic29sYXIiOiIifSx7InJlZ2lvbiI6Iu2ZlOyEsTIiLCJuYW1lIjoi7KCE7ZiE7KO8IiwibHVuYXIiOiIiLCJzb2xhciI6IjAyLjIyIn0seyJyZWdpb24iOiLtmZTshLEyIiwibmFtZSI6Iuq5gOynhOyImCIsImx1bmFyIjoiIiwic29sYXIiOiIwNC4wMSJ9LHsicmVnaW9uIjoi7ZmU7ISxMiIsIm5hbWUiOiLquYDrj4TsnKQiLCJsdW5hciI6IiIsInNvbGFyIjoiMDYuMjkifSx7InJlZ2lvbiI6Iu2ZlOyEsTIiLCJuYW1lIjoi6rmA7J207IaUIiwibHVuYXIiOiIiLCJzb2xhciI6IjAzLjAzIn0seyJyZWdpb24iOiLrr7jqta0xIiwibmFtZSI6IuyghOyImOyXsCIsImx1bmFyIjoiMDEuMTQiLCJzb2xhciI6IiJ9LHsicmVnaW9uIjoi66+46rWtMSIsIm5hbWUiOiLsoITrqoXtnawiLCJsdW5hciI6IjA4LjA2Iiwic29sYXIiOiIifSx7InJlZ2lvbiI6IuuvuOq1rTEiLCJuYW1lIjoi7JeQ64W5IiwibHVuYXIiOiIiLCJzb2xhciI6IjEwLjA1In0seyJyZWdpb24iOiLrr7jqta0yIiwibmFtZSI6IuyhsOyFiSIsImx1bmFyIjoiIiwic29sYXIiOiIwNC4xMSJ9LHsicmVnaW9uIjoi66+46rWtMiIsIm5hbWUiOiLsnYDqsr0iLCJsdW5hciI6IiIsInNvbGFyIjoiMDQuMTQifSx7InJlZ2lvbiI6IuuvuOq1rTIiLCJuYW1lIjoi7KCc7ZWcIiwibHVuYXIiOiIiLCJzb2xhciI6IjA5LjI0In0seyJyZWdpb24iOiLrr7jqta0yIiwibmFtZSI6IuyGjOudvCIsImx1bmFyIjoiIiwic29sYXIiOiIwNC4xMiJ9XQ==";
+        let currentData = JSON.parse(decodeBase64(rawData));
         let sortDirection = { lunar: 1, solar: 1 };
 
-        /**
-         * 1. 데이터 로드 함수
-         * 외부에서 호출하거나, 특정 이벤트를 통해 base64 문자열을 전달받아 실행할 수 있습니다.
-         */
-        window.loadPremiumData = function () {
-          try {
-            // 한글 유니코드 대응 디코딩
-            renderTable(currentData);
-          } catch (e) {
-            console.error("데이터 파싱 오류:", e);
-            $("#user-table-body").html(
-              '<tr><td colspan="4" class="py-20 text-red-400">데이터 형식이 올바르지 않습니다.</td></tr>',
-            );
-          }
-        };
+        // 1. 달력 초기화 함수
+        function initCalendar(data) {
+          const calendarEl = document.getElementById("calendar");
 
-        /**
-         * 2. 렌더링 함수
-         */
+          const calendar = new FullCalendar.Calendar(calendarEl, {
+            initialView: "dayGridMonth",
+            locale: "ko",
+            height: "auto",
+            headerToolbar: {
+              left: "",
+              center: "prev title next",
+              right: "",
+            },
+            // 핵심 수정 사항: 이벤트를 함수 형태로 정의하여 연도가 바뀔 때마다 실행되게 함
+            events: function (info, successCallback, failureCallback) {
+              const displayYear = info.start.getFullYear(); // 현재 달력 화면의 연도 추출
+              const events = [];
+
+              data.forEach((item) => {
+                // 양력 처리
+                if (item.solar) {
+                  events.push({
+                    title: `${item.name}`,
+                    start: `${displayYear}-${item.solar.replace(".", "-")}`,
+                    backgroundColor: "#3b82f6",
+                    extendedProps: { region: item.region },
+                  });
+                }
+                // 음력 처리
+                if (item.lunar) {
+                  events.push({
+                    title: `${item.name}`,
+                    start: `${displayYear}-${item.lunar.replace(".", "-")}`,
+                    backgroundColor: "#8b5cf6",
+                    extendedProps: { region: item.region },
+                  });
+                }
+              });
+
+              successCallback(events);
+            },
+            eventClick: function (info) {
+              alert(`${info.event.extendedProps.region} - ${info.event.title}`);
+            },
+          });
+
+          calendar.render();
+        }
+
+        // 2. 테이블 렌더링 함수
         function renderTable(dataList) {
           const $tbody = $("#user-table-body").empty();
           let lastRegion = "";
@@ -132,17 +245,16 @@
 
           if (dataList.length === 0) {
             $tbody.html(
-              '<tr><td colspan="4" class="py-20 text-slate-400">표시할 데이터가 없습니다.</td></tr>',
+              '<tr><td colspan="4" class="py-20 text-slate-400">데이터가 없습니다.</td></tr>',
             );
             return;
           }
 
           $.each(dataList, function (index, item) {
-            const $tr = $('<tr class="hover:bg-blue-50/80 transition-colors">');
+            const $tr = $('<tr class="hover:bg-blue-50/50 transition-colors">');
 
-            // 지역 셀 병합 로직
             if (item.region !== lastRegion) {
-              $lastRegionCell = $('<td class="px-3 py-2 region-cell nowrap">')
+              $lastRegionCell = $('<td class="px-3 py-3 region-cell nowrap">')
                 .text(item.region)
                 .attr("rowspan", 1);
               $tr.append($lastRegionCell);
@@ -153,50 +265,54 @@
               $lastRegionCell.attr("rowspan", rowCount);
             }
 
-            // 이름, 음력, 양력 셀 추가 (줄바꿈 방지 클래스 적용)
-            const nameCell = $(
-              '<td class="px-3 py-2 font-bold text-slate-600 nowrap">',
-            ).text(item.name);
-            const lunarCell = $(
-              '<td class="px-3 py-2 text-slate-600 nowrap">',
-            ).text(item.lunar || "-");
-            const solarCell = $(
-              '<td class="px-3 py-2 text-slate-600 nowrap">',
-            ).text(item.solar || "-");
-
-            $tr.append(nameCell).append(lunarCell).append(solarCell);
+            $tr.append(
+              $('<td class="px-3 py-3 font-bold text-slate-700 nowrap">').text(
+                item.name,
+              ),
+            );
+            $tr.append(
+              $('<td class="px-3 py-3 text-slate-500 nowrap">').text(
+                item.lunar || "-",
+              ),
+            );
+            $tr.append(
+              $('<td class="px-3 py-3 text-slate-500 nowrap">').text(
+                item.solar || "-",
+              ),
+            );
             $tbody.append($tr);
           });
         }
 
-        /**
-         * 3. 정렬 이벤트
-         */
+        // 3. 정렬 이벤트
         $(".sort-header").on("click", function () {
           const sortKey = $(this).data("sort");
           const direction = sortDirection[sortKey];
 
           currentData.sort((a, b) => {
-            // 빈 데이터는 항상 아래로
             const valA = a[sortKey] || (direction === 1 ? "99.99" : "00.00");
             const valB = b[sortKey] || (direction === 1 ? "99.99" : "00.00");
             return valA.localeCompare(valB) * direction;
           });
 
-          sortDirection[sortKey] *= -1; // 방향 반전
-
-          // 아이콘 상태 변경
+          sortDirection[sortKey] *= -1;
           $(".sort-header i").attr("class", "fa-solid fa-sort ml-1 opacity-30");
-          const iconClass =
-            direction === 1
-              ? "fa-solid fa-sort-down ml-1"
-              : "fa-solid fa-sort-up ml-1";
-          $(this).find("i").attr("class", iconClass).removeClass("opacity-30");
+          $(this)
+            .find("i")
+            .attr(
+              "class",
+              direction === 1
+                ? "fa-solid fa-sort-down ml-1"
+                : "fa-solid fa-sort-up ml-1",
+            )
+            .removeClass("opacity-30");
 
           renderTable(currentData);
         });
 
-        window.loadPremiumData();
+        // 초기 실행
+        initCalendar(currentData);
+        renderTable(currentData);
       });
     </script>
   </body>
