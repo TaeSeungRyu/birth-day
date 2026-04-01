@@ -7,6 +7,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/lunar-javascript/lunar.js"></script>
     <link
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
@@ -187,7 +188,6 @@
         let currentData = JSON.parse(decodeBase64(rawData));
         let sortDirection = { lunar: 1, solar: 1 };
 
-        // 1. 달력 초기화 함수
         function initCalendar(data) {
           const calendarEl = document.getElementById("calendar");
 
@@ -200,36 +200,59 @@
               center: "prev title next",
               right: "",
             },
-            // 핵심 수정 사항: 이벤트를 함수 형태로 정의하여 연도가 바뀔 때마다 실행되게 함
             events: function (info, successCallback, failureCallback) {
-              const displayYear = info.start.getFullYear(); // 현재 달력 화면의 연도 추출
+              const displayYear = info.start.getFullYear();
               const events = [];
 
               data.forEach((item) => {
-                // 양력 처리
+                // 1. 양력 처리 (기존과 동일)
                 if (item.solar) {
                   events.push({
-                    title: `${item.name}`,
+                    title: `[양] ${item.name}`,
                     start: `${displayYear}-${item.solar.replace(".", "-")}`,
                     backgroundColor: "#3b82f6",
-                    extendedProps: { region: item.region },
+                    extendedProps: { region: item.region, type: "양력" },
                   });
                 }
-                // 음력 처리
+
+                // 2. 음력 처리 (핵심 수정 부분)
                 if (item.lunar) {
-                  events.push({
-                    title: `${item.name}`,
-                    start: `${displayYear}-${item.lunar.replace(".", "-")}`,
-                    backgroundColor: "#8b5cf6",
-                    extendedProps: { region: item.region },
-                  });
+                  try {
+                    const [month, day] = item.lunar.split(".").map(Number);
+
+                    // lunar-javascript를 사용하여 음력을 양력으로 변환
+                    // Lunar.fromYmd(년, 월, 일) -> .getSolar()
+                    const lunarDate = Solar.fromYmd(
+                      displayYear,
+                      1,
+                      1,
+                    ).getLunar(); // 기준점
+                    const solarDate = Lunar.fromYmd(
+                      displayYear,
+                      month,
+                      day,
+                    ).getSolar();
+
+                    const solarFullDate = `${solarDate.getYear()}-${String(solarDate.getMonth()).padStart(2, "0")}-${String(solarDate.getDay()).padStart(2, "0")}`;
+
+                    events.push({
+                      title: `[음] ${item.name}`,
+                      start: solarFullDate,
+                      backgroundColor: "#8b5cf6",
+                      extendedProps: { region: item.region, type: "음력" },
+                    });
+                  } catch (e) {
+                    console.error("음력 변환 오류:", item.name, e);
+                  }
                 }
               });
 
               successCallback(events);
             },
             eventClick: function (info) {
-              alert(`${info.event.extendedProps.region} - ${info.event.title}`);
+              alert(
+                `[${info.event.extendedProps.region}] ${info.event.title}\n구분: ${info.event.extendedProps.type}`,
+              );
             },
           });
 
